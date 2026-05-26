@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoCal Urologic Oncology Trial Matcher</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        /* CSS Variable Definitions for consistent theming */
+        :root {
+            --primary-blue: #005A9C;
+            --secondary-blue: #0085CA;
+            --background-color: #F4F7F6;
+            --card-background: #FFFFFF;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #DDDDDD;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+        }
+        
+        /* Global Reset and Typography */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.6;
+        }
+        
+        /* Main Application Container */
+       .app-container {
+            max-width: 1000px;
+            width: 100%;
+            background: var(--card-background);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+        }
+        
+        /* Header Styling */
+        h1 { 
+            color: var(--primary-blue); 
+            text-align: center; 
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        
+        p.subtitle { 
+            text-align: center; 
+            color: var(--text-secondary); 
+            font-size: 1.1em; 
+            margin-bottom: 40px; 
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+        
+        h3 {
+            color: var(--primary-blue);
+            margin-top: 30px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        
+        /* Input and Button Controls */
+       .search-interface {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 16px;
+            font-size: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+        
+        button {
+            padding: 16px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        
+        button:hover { 
+            background-color: var(--secondary-blue); 
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        /* Dynamic Dashboard Sections */
+       .dashboard-area { 
+            display: none; 
+            margin-top: 30px; 
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Physician Profile Card */
+       .intelligence-card {
+            background-color: #eef5fa;
+            padding: 20px;
+            border-left: 6px solid var(--primary-blue);
+            border-radius: 6px;
+            margin-bottom: 30px;
+            font-size: 1.05em;
+        }
+        
+        /* Trial List Elements */
+       .trial-container { 
+            margin-bottom: 30px; 
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+       .trial-card {
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #fafafa;
+            transition: all 0.2s ease-in-out;
+            position: relative;
+        }
+        
+       .trial-card:hover { 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            border-color: var(--primary-blue);
+            background-color: #ffffff;
+            transform: translateY(-2px);
+        }
+        
+       .trial-card::after {
+            content: "Generate Tree →";
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-blue);
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+       .trial-card:hover::after {
+            opacity: 1;
+        }
+        
+       .trial-header { 
+            font-weight: bold; 
+            color: var(--primary-blue); 
+            margin-bottom: 8px; 
+            font-size: 1.1em;
+            padding-right: 120px; /* Space for the hover text */
+        }
+        
+       .trial-metadata { 
+            font-size: 0.9em; 
+            color: var(--text-secondary); 
+            display: flex;
+            gap: 15px;
+        }
+        
+       .metadata-badge {
+            background-color: #e0e0e0;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        /* Mermaid.js Rendering Container */
+        #visualization-container {
+            margin-top: 20px;
+            padding: 30px;
+            background: #ffffff;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow-x: auto; /* Allow scrolling for large graphs */
+        }
+        
+       .instruction-text {
+            color: var(--text-secondary);
+            font-style: italic;
+            text-align: center;
+        }
+        
+        /* Loading Animation */
+       .spinner {
+            border: 5px solid #f3f3f3; 
+            border-top: 5px solid var(--primary-blue);
+            border-radius: 50%; 
+            width: 50px; 
+            height: 50px; 
+            animation: spin 1s linear infinite;
+            margin: 40px auto; 
+            display: none;
+        }
+        
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h1>AI Trial Accrual Engine</h1>
+    <p class="subtitle">Urologic Oncology matching for the Southern California Clinical Ecosystem</p>
+    
+    <div class="search-interface">
+        <input type="text" id="queryInput" placeholder="Enter Physician Name (e.g., Kevin Chan, Karim Chamie, Nicholas Donin)">
+        <button onclick="executeIntelligencePipeline()">Profile & Search</button>
+    </div>
+
+    <div class="spinner" id="primaryLoader"></div>
+
+    <div class="dashboard-area" id="mainDashboard">
+        
+        <div class="intelligence-card" id="physicianProfileData">
+            </div>
+        
+        <h3>Active Regional Clinical Trials</h3>
+        <p style="font-size: 0.9em; margin-bottom: 20px;">Data dynamically sourced from the ClinicalTrials.gov API v2, filtered for Southern California locations and recruiting status.</p>
+        
+        <div class="trial-container" id="apiResultsContainer">
+            </div>
+
+        <h3>Eligibility Decision Matrix</h3>
+        <div id="visualization-container">
+            <p class="instruction-text">Select a clinical trial from the list above to command the AI to parse the unstructured eligibility criteria and render a deterministic decision tree.</p>
+            <div id="mermaid-render-target" class="mermaid"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize the Mermaid.js engine
+    // startOnLoad is set to false because we will manually trigger rendering via JavaScript
+    // after the mock-LLM generates the markdown syntax.
+    mermaid.initialize({ 
+        startOnLoad: false, 
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#eef5fa',
+            primaryTextColor: '#333333',
+            primaryBorderColor: '#005A9C',
+            lineColor: '#666666',
+            secondaryColor: '#f4f4f4',
+            tertiaryColor: '#ffffff'
+        }
+    });
+
+    // 2. Simulated AI Intelligence Database
+    // In a production environment, this data is generated dynamically by passing the 
+    // physician's name to an LLM agent that searches recent publications, institutional 
+    // directories, and past trial affiliations to deduce sub-specialties.
+    const intelligenceDatabase = {
+        "kevin chan": {
+            institution: "City of Hope",
+            specialty: "Bladder Cancer & Robotic Surgery",
+            searchParameters: "bladder cancer OR urothelial carcinoma",
+            locationRadius: "Los Angeles"
+        },
+        "karim chamie": {
+            institution: "UCLA Health",
+            specialty: "Urologic Oncology & Minimally Invasive Urology",
+            searchParameters: "urothelial carcinoma OR bladder cancer",
+            locationRadius: "Los Angeles"
+        },
+        "nicholas donin": {
+            institution: "Providence / Saint John's Cancer Institute",
+            specialty: "Prostate & Testicular Cancers",
+            searchParameters: "prostate cancer",
+            locationRadius: "Santa Monica OR Los Angeles"
+        },
+        "ali zhumkhawala": {
+            institution: "City of Hope",
+            specialty: "Renal Cell Carcinoma & Kidney Cancers",
+            searchParameters: "kidney cancer OR renal cell carcinoma",
+            locationRadius: "Los Angeles"
+        },
+        "default": {
+            institution: "Southern California Network Affiliate",
+            specialty: "General Urologic Oncology",
+            searchParameters: "prostate cancer OR bladder cancer OR kidney cancer",
+            locationRadius: "California"
+        }
+    };
+
+    /**
+     * Core Execution Pipeline
+     * Triggered by the main interface button.
+     */
+    async function executeIntelligencePipeline() {
+        const inputString = document.getElementById('queryInput').value.trim().toLowerCase();
+        
+        if (!inputString) {
+            alert("Input required: Please enter a valid physician name to initiate the intelligence gathering protocol.");
+            return;
+        }
+
+        // Reset UI state
+        document.getElementById('mainDashboard').style.display = 'none';
+        document.getElementById('primaryLoader').style.display = 'block';
+        
+        // Clear previous visualizations
+        const visualContainer = document.getElementById('visualization-container');
+        visualContainer.innerHTML = `
+            <p class="instruction-text">Select a clinical trial from the list above to command the AI to parse the unstructured eligibility criteria and render a deterministic decision tree.</p>
+            <div id="mermaid-render-target" class="mermaid"></div>
+        `;
+
+        // 3. Entity Resolution Simulation
+        let physicianProfile = intelligenceDatabase["default"];
+        for (const key in intelligenceDatabase) {
+            if (inputString.includes(key)) {
+                physicianProfile = intelligenceDatabase[key];
+                break;
+            }
+        }
+
+        // Update the dashboard with the extracted intelligence
+        const profileDisplay = document.getElementById('physicianProfileData');
+        profileDisplay.innerHTML = `
+            <strong style="color: var(--primary-blue);">Entity Resolved:</strong> ${document.getElementById('queryInput').value}<br>
+            <strong style="color: var(--primary-blue);">Institutional Mapping:</strong> ${physicianProfile.institution} (Southern California Node)<br>
+            <strong style="color: var(--primary-blue);">Deduced Clinical Focus:</strong> ${physicianProfile.specialty}
+        `;
+
+        // 4. Initiate API Data Fetch
+        await queryClinicalTrialsAPI(physicianProfile.searchParameters, physicianProfile.locationRadius);
+    }
+
+    /**
+     * Interfaces with the ClinicalTrials.gov API v2.
+     * Constructs the RESTful URL, executes the GET request, and parses the nested JSON.
+     */
+    async function queryClinicalTrialsAPI(conditionParameters, locationParameters) {
+        // Construct the query string according to API v2 OpenAPI specifications
+        // We encode the URI components to handle spaces and special characters safely
+        const encodedCondition = encodeURIComponent(conditionParameters);
+        const encodedLocation = encodeURIComponent(locationParameters);
+        
+        // Build the full endpoint URL
+        // We explicitly filter for 'RECRUITING' status to ensure actionable results
+        // We limit pageSize to 5 for the purpose of a clean UI presentation
+        const endpointUrl = `https://clinicaltrials.gov/api/v2/studies?query.cond=${encodedCondition}&query.locn=${encodedLocation}&filter.overallStatus=RECRUITING&pageSize=5&format=json`;
+
+        try {
+            // Execute the fetch request leveraging native browser CORS support
+            const networkResponse = await fetch(endpointUrl);
+            
+            if (!networkResponse.ok) {
+                throw new Error(`API returned HTTP Status: ${networkResponse.status}`);
+            }
+            
+            const payload = await networkResponse.json();
+            
+            // Transition UI from loading state to data display
+            document.getElementById('primaryLoader').style.display = 'none';
+            document.getElementById('mainDashboard').style.display = 'block';
+
+            const resultsContainer = document.getElementById('apiResultsContainer');
+            resultsContainer.innerHTML = ""; // Clear previous results
+
+            // Validate payload structure
+            if (!payload.studies || payload.studies.length === 0) {
+                resultsContainer.innerHTML = "<p style='color: var(--danger-color); font-weight: bold;'>No active trials found matching the deduced parameters within the localized geographic network.</p>";
+                return;
+            }
+
+            // 5. Traverse the nested JSON schema
+            payload.studies.forEach((studyData) => {
+                // Navigate: Root -> protocolSection
+                const protocol = studyData.protocolSection;
+                
+                // Navigate: protocolSection -> identificationModule
+                const identification = protocol.identificationModule;
+                const nctIdentifier = identification.nctId || "NCT_UNKNOWN";
+                const studyTitle = identification.briefTitle || "Untitled Clinical Study";
+                
+                // Navigate: protocolSection -> statusModule
+                const statusInfo = protocol.statusModule;
+                const currentStatus = statusInfo.overallStatus || "UNKNOWN STATUS";
+                
+                // Navigate: protocolSection -> eligibilityModule
+                const eligibilityData = protocol.eligibilityModule;
+                
+                // Extract the massive free-text block for simulation purposes
+                const rawCriteriaText = eligibilityData && eligibilityData.eligibilityCriteria 
+                   ? eligibilityData.eligibilityCriteria.substring(0, 800) + "..." // Truncate payload size
+                    : "No structured criteria provided in registry.";
+
+                // Construct the DOM elements for the trial card
+                const cardElement = document.createElement('div');
+                cardElement.className = 'trial-card';
+                cardElement.innerHTML = `
+                    <div class="trial-header">${studyTitle}</div>
+                    <div class="trial-metadata">
+                        <span class="metadata-badge">${nctIdentifier}</span>
+                        <span class="metadata-badge" style="background-color: #d4edda; color: #155724;">${currentStatus}</span>
+                        <span><strong>Focus:</strong> ${physicianProfile.specialty.split('&')}</span>
+                    </div>
+                `;
+                
+                // Bind the click event to initiate the AI parsing simulation
+                cardElement.onclick = () => simulateLLMParsingAndRender(nctIdentifier, rawCriteriaText);
+                resultsContainer.appendChild(cardElement);
+            });
+
+        } catch (systemError) {
+            console.error("Critical Failure in API fetching protocol:", systemError);
+            document.getElementById('primaryLoader').style.display = 'none';
+            alert("System Error: Failed to communicate with the ClinicalTrials.gov API. Please verify network connectivity and API operational status.");
+        }
+    }
+
+    /**
+     * Simulates the complex natural language processing required to convert
+     * unstructured text into a deterministic Mermaid.js diagram.
+     */
+    async function simulateLLMParsingAndRender(nctId, rawText) {
+        const visualContainer = document.getElementById('visualization-container');
+        
+        // Display intermediate loading state indicating active AI computation
+        visualContainer.innerHTML = `
+            <div class="spinner" style="display:block; margin-top: 20px;"></div>
+            <p style="text-align:center; margin-top: 15px; font-weight: bold; color: var(--primary-blue);">
+                AI Agent actively parsing unstructured eligibility schema for Trial ${nctId}...<br>
+                <span style="font-size: 0.85em; color: var(--text-secondary); font-weight: normal;">Executing semantic extraction and generating Boolean logic nodes...</span>
+            </p>
+        `;
+
+        // Simulate the latency of a remote API call to a Large Language Model (e.g., GPT-4 or Claude)
+        setTimeout(async () => {
+            // Reset container for rendering
+            visualContainer.innerHTML = `<div id="active-mermaid-graph" class="mermaid"></div>`;
+            const renderingTarget = document.getElementById('active-mermaid-graph');
+
+            // 6. Formulate the Mermaid.js Markdown Syntax
+            // In a live production environment, this exact string is the raw output generated by the LLM.
+            // The AI is prompted to translate inclusion/exclusion rules into strict 'graph TD' syntax.
+            const generatedMermaidSyntax = `
+                graph TD
+                %% Initial Assessment Node
+                A --> B{Histologically Confirmed Diagnosis?}
+                
+                %% Primary Inclusion Branch
+                B -- Yes --> C{Age >= 18 Years?}
+                B -- No --> Z
+                
+                %% Secondary Inclusion Branch
+                C -- Yes --> D{Evidence of Extrapelvic Metastases?}
+                C -- No --> Z
+                
+                %% Exclusion Rule Evaluation
+                D -- No --> E{Prior Systemic Chemotherapy?}
+                D -- Yes --> Z
+                
+                %% Temporal Exclusion Validation
+                E -- No --> Y[Eligible for Enrollment]
+                E -- Yes --> F{Therapy completed > 5 years ago?}
+                
+                %% Final Determinations
+                F -- Yes --> Y
+                F -- No --> Z
+                
+                %% Style Definitions for Visual Clarity
+                classDef eligibleNode fill:#d4edda,stroke:#28a745,stroke-width:3px,color:#155724,font-weight:bold;
+                classDef ineligibleNode fill:#f8d7da,stroke:#dc3545,stroke-width:3px,color:#721c24,font-weight:bold;
+                classDef decisionNode fill:#fff3cd,stroke:#ffc107,stroke-width:2px;
+                
+                %% Apply Styles
+                class Y eligibleNode;
+                class Z ineligibleNode;
+                class B,C,D,E,F decisionNode;
+            `;
+
+            // Inject the raw syntax text into the DOM element
+            renderingTarget.textContent = generatedMermaidSyntax;
+            
+            try {
+                // 7. Execute Dynamic Client-Side Rendering
+                // The mermaid.render function parses the syntax and creates the SVG graphic
+                // We use a unique ID based on the current timestamp to prevent DOM conflicts
+                const uniqueRenderId = \`graph-\${Date.now()}\`;
+                const { svg } = await mermaid.render(uniqueRenderId, generatedMermaidSyntax);
+                
+                // Replace the raw text with the finalized SVG graphic
+                renderingTarget.innerHTML = svg;
+                
+            } catch (renderingError) {
+                console.error("Fatal Error during Mermaid.js SVG rendering pipeline: ", renderingError);
+                visualContainer.innerHTML = `
+                    <p style='color: var(--danger-color); font-weight: bold; text-align: center;'>
+                        Rendering Failure: The AI generated invalid structural syntax that the Mermaid engine could not parse.
+                    </p>
+                `;
+            }
+        }, 2200); // 2.2-second delay simulating the LLM processing latency
+    }
+</script>
+
+</body>
+</html>
