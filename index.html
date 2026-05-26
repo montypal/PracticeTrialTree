@@ -33,7 +33,7 @@
         }
         
         /* Main Application Container */
-       .app-container {
+        .app-container {
             max-width: 1000px;
             width: 100%;
             background: var(--card-background);
@@ -67,7 +67,7 @@
         }
         
         /* Input and Button Controls */
-       .search-interface {
+        .search-interface {
             display: flex;
             gap: 15px;
             margin-bottom: 30px;
@@ -108,7 +108,7 @@
         }
         
         /* Dynamic Dashboard Sections */
-       .dashboard-area { 
+        .dashboard-area { 
             display: none; 
             margin-top: 30px; 
             animation: fadeIn 0.5s ease-in;
@@ -120,7 +120,7 @@
         }
         
         /* Physician Profile Card */
-       .intelligence-card {
+        .intelligence-card {
             background-color: #eef5fa;
             padding: 20px;
             border-left: 6px solid var(--primary-blue);
@@ -130,14 +130,14 @@
         }
         
         /* Trial List Elements */
-       .trial-container { 
+        .trial-container { 
             margin-bottom: 30px; 
             display: grid;
             grid-template-columns: 1fr;
             gap: 15px;
         }
         
-       .trial-card {
+        .trial-card {
             padding: 20px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
@@ -147,14 +147,14 @@
             position: relative;
         }
         
-       .trial-card:hover { 
+        .trial-card:hover { 
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
             border-color: var(--primary-blue);
             background-color: #ffffff;
             transform: translateY(-2px);
         }
         
-       .trial-card::after {
+        .trial-card::after {
             content: "Generate Tree →";
             position: absolute;
             right: 20px;
@@ -166,26 +166,26 @@
             transition: opacity 0.2s;
         }
         
-       .trial-card:hover::after {
+        .trial-card:hover::after {
             opacity: 1;
         }
         
-       .trial-header { 
+        .trial-header { 
             font-weight: bold; 
             color: var(--primary-blue); 
             margin-bottom: 8px; 
             font-size: 1.1em;
-            padding-right: 120px; /* Space for the hover text */
+            padding-right: 120px;
         }
         
-       .trial-metadata { 
+        .trial-metadata { 
             font-size: 0.9em; 
             color: var(--text-secondary); 
             display: flex;
             gap: 15px;
         }
         
-       .metadata-badge {
+        .metadata-badge {
             background-color: #e0e0e0;
             padding: 3px 8px;
             border-radius: 4px;
@@ -205,17 +205,17 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            overflow-x: auto; /* Allow scrolling for large graphs */
+            overflow-x: auto;
         }
         
-       .instruction-text {
+        .instruction-text {
             color: var(--text-secondary);
             font-style: italic;
             text-align: center;
         }
         
         /* Loading Animation */
-       .spinner {
+        .spinner {
             border: 5px solid #f3f3f3; 
             border-top: 5px solid var(--primary-blue);
             border-radius: 50%; 
@@ -248,13 +248,13 @@
     <div class="dashboard-area" id="mainDashboard">
         
         <div class="intelligence-card" id="physicianProfileData">
-            </div>
+        </div>
         
         <h3>Active Regional Clinical Trials</h3>
         <p style="font-size: 0.9em; margin-bottom: 20px;">Data dynamically sourced from the ClinicalTrials.gov API v2, filtered for Southern California locations and recruiting status.</p>
         
         <div class="trial-container" id="apiResultsContainer">
-            </div>
+        </div>
 
         <h3>Eligibility Decision Matrix</h3>
         <div id="visualization-container">
@@ -266,8 +266,6 @@
 
 <script>
     // 1. Initialize the Mermaid.js engine
-    // startOnLoad is set to false because we will manually trigger rendering via JavaScript
-    // after the mock-LLM generates the markdown syntax.
     mermaid.initialize({ 
         startOnLoad: false, 
         theme: 'base',
@@ -282,9 +280,6 @@
     });
 
     // 2. Simulated AI Intelligence Database
-    // In a production environment, this data is generated dynamically by passing the 
-    // physician's name to an LLM agent that searches recent publications, institutional 
-    // directories, and past trial affiliations to deduce sub-specialties.
     const intelligenceDatabase = {
         "kevin chan": {
             institution: "City of Hope",
@@ -320,7 +315,6 @@
 
     /**
      * Core Execution Pipeline
-     * Triggered by the main interface button.
      */
     async function executeIntelligencePipeline() {
         const inputString = document.getElementById('queryInput').value.trim().toLowerCase();
@@ -364,21 +358,14 @@
 
     /**
      * Interfaces with the ClinicalTrials.gov API v2.
-     * Constructs the RESTful URL, executes the GET request, and parses the nested JSON.
      */
     async function queryClinicalTrialsAPI(conditionParameters, locationParameters) {
-        // Construct the query string according to API v2 OpenAPI specifications
-        // We encode the URI components to handle spaces and special characters safely
         const encodedCondition = encodeURIComponent(conditionParameters);
         const encodedLocation = encodeURIComponent(locationParameters);
         
-        // Build the full endpoint URL
-        // We explicitly filter for 'RECRUITING' status to ensure actionable results
-        // We limit pageSize to 5 for the purpose of a clean UI presentation
         const endpointUrl = `https://clinicaltrials.gov/api/v2/studies?query.cond=${encodedCondition}&query.locn=${encodedLocation}&filter.overallStatus=RECRUITING&pageSize=5&format=json`;
 
         try {
-            // Execute the fetch request leveraging native browser CORS support
             const networkResponse = await fetch(endpointUrl);
             
             if (!networkResponse.ok) {
@@ -394,7 +381,6 @@
             const resultsContainer = document.getElementById('apiResultsContainer');
             resultsContainer.innerHTML = ""; // Clear previous results
 
-            // Validate payload structure
             if (!payload.studies || payload.studies.length === 0) {
                 resultsContainer.innerHTML = "<p style='color: var(--danger-color); font-weight: bold;'>No active trials found matching the deduced parameters within the localized geographic network.</p>";
                 return;
@@ -402,27 +388,21 @@
 
             // 5. Traverse the nested JSON schema
             payload.studies.forEach((studyData) => {
-                // Navigate: Root -> protocolSection
                 const protocol = studyData.protocolSection;
                 
-                // Navigate: protocolSection -> identificationModule
                 const identification = protocol.identificationModule;
                 const nctIdentifier = identification.nctId || "NCT_UNKNOWN";
                 const studyTitle = identification.briefTitle || "Untitled Clinical Study";
                 
-                // Navigate: protocolSection -> statusModule
                 const statusInfo = protocol.statusModule;
                 const currentStatus = statusInfo.overallStatus || "UNKNOWN STATUS";
                 
-                // Navigate: protocolSection -> eligibilityModule
                 const eligibilityData = protocol.eligibilityModule;
                 
-                // Extract the massive free-text block for simulation purposes
                 const rawCriteriaText = eligibilityData && eligibilityData.eligibilityCriteria 
-                   ? eligibilityData.eligibilityCriteria.substring(0, 800) + "..." // Truncate payload size
+                    ? eligibilityData.eligibilityCriteria.substring(0, 800) + "..." 
                     : "No structured criteria provided in registry.";
 
-                // Construct the DOM elements for the trial card
                 const cardElement = document.createElement('div');
                 cardElement.className = 'trial-card';
                 cardElement.innerHTML = `
@@ -430,11 +410,10 @@
                     <div class="trial-metadata">
                         <span class="metadata-badge">${nctIdentifier}</span>
                         <span class="metadata-badge" style="background-color: #d4edda; color: #155724;">${currentStatus}</span>
-                        <span><strong>Focus:</strong> ${physicianProfile.specialty.split('&')}</span>
+                        <span><strong>Focus:</strong> ${physicianProfile.specialty.split('&')[0]}</span>
                     </div>
                 `;
                 
-                // Bind the click event to initiate the AI parsing simulation
                 cardElement.onclick = () => simulateLLMParsingAndRender(nctIdentifier, rawCriteriaText);
                 resultsContainer.appendChild(cardElement);
             });
@@ -447,13 +426,11 @@
     }
 
     /**
-     * Simulates the complex natural language processing required to convert
-     * unstructured text into a deterministic Mermaid.js diagram.
+     * Simulates the NLP parsing to render Mermaid.js
      */
     async function simulateLLMParsingAndRender(nctId, rawText) {
         const visualContainer = document.getElementById('visualization-container');
         
-        // Display intermediate loading state indicating active AI computation
         visualContainer.innerHTML = `
             <div class="spinner" style="display:block; margin-top: 20px;"></div>
             <p style="text-align:center; margin-top: 15px; font-weight: bold; color: var(--primary-blue);">
@@ -462,23 +439,19 @@
             </p>
         `;
 
-        // Simulate the latency of a remote API call to a Large Language Model (e.g., GPT-4 or Claude)
         setTimeout(async () => {
-            // Reset container for rendering
             visualContainer.innerHTML = `<div id="active-mermaid-graph" class="mermaid"></div>`;
             const renderingTarget = document.getElementById('active-mermaid-graph');
 
             // 6. Formulate the Mermaid.js Markdown Syntax
-            // In a live production environment, this exact string is the raw output generated by the LLM.
-            // The AI is prompted to translate inclusion/exclusion rules into strict 'graph TD' syntax.
             const generatedMermaidSyntax = `
                 graph TD
                 %% Initial Assessment Node
-                A --> B{Histologically Confirmed Diagnosis?}
+                A[Evaluate Patient] --> B{Histologically Confirmed Diagnosis?}
                 
                 %% Primary Inclusion Branch
                 B -- Yes --> C{Age >= 18 Years?}
-                B -- No --> Z
+                B -- No --> Z[Ineligible]
                 
                 %% Secondary Inclusion Branch
                 C -- Yes --> D{Evidence of Extrapelvic Metastases?}
@@ -507,17 +480,13 @@
                 class B,C,D,E,F decisionNode;
             `;
 
-            // Inject the raw syntax text into the DOM element
             renderingTarget.textContent = generatedMermaidSyntax;
             
             try {
-                // 7. Execute Dynamic Client-Side Rendering
-                // The mermaid.render function parses the syntax and creates the SVG graphic
-                // We use a unique ID based on the current timestamp to prevent DOM conflicts
-                const uniqueRenderId = \`graph-\${Date.now()}\`;
+                // Fixed the template literal bug right here:
+                const uniqueRenderId = `graph-${Date.now()}`;
                 const { svg } = await mermaid.render(uniqueRenderId, generatedMermaidSyntax);
                 
-                // Replace the raw text with the finalized SVG graphic
                 renderingTarget.innerHTML = svg;
                 
             } catch (renderingError) {
@@ -528,7 +497,7 @@
                     </p>
                 `;
             }
-        }, 2200); // 2.2-second delay simulating the LLM processing latency
+        }, 2200); 
     }
 </script>
 
