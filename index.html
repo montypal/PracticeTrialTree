@@ -6,7 +6,6 @@
     <title>SoCal Urologic Oncology Trial Matcher</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <style>
-        /* CSS Variable Definitions for consistent theming */
         :root {
             --primary-blue: #005A9C;
             --secondary-blue: #0085CA;
@@ -19,7 +18,6 @@
             --danger-color: #dc3545;
         }
         
-        /* Global Reset and Typography */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--background-color);
@@ -32,7 +30,6 @@
             line-height: 1.6;
         }
         
-        /* Main Application Container */
         .app-container {
             max-width: 1000px;
             width: 100%;
@@ -42,7 +39,6 @@
             box-shadow: 0 8px 16px rgba(0,0,0,0.08);
         }
         
-        /* Header Styling */
         h1 { 
             color: var(--primary-blue); 
             text-align: center; 
@@ -66,7 +62,6 @@
             padding-bottom: 10px;
         }
         
-        /* Input and Button Controls */
         .search-interface {
             display: flex;
             gap: 15px;
@@ -107,7 +102,6 @@
             transform: scale(0.98);
         }
         
-        /* Dynamic Dashboard Sections */
         .dashboard-area { 
             display: none; 
             margin-top: 30px; 
@@ -119,7 +113,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Physician Profile Card */
         .intelligence-card {
             background-color: #eef5fa;
             padding: 20px;
@@ -129,7 +122,6 @@
             font-size: 1.05em;
         }
         
-        /* Trial List Elements */
         .trial-container { 
             margin-bottom: 30px; 
             display: grid;
@@ -193,7 +185,6 @@
             font-weight: bold;
         }
         
-        /* Mermaid.js Rendering Container */
         #visualization-container {
             margin-top: 20px;
             padding: 30px;
@@ -214,7 +205,6 @@
             text-align: center;
         }
         
-        /* Loading Animation */
         .spinner {
             border: 5px solid #f3f3f3; 
             border-top: 5px solid var(--primary-blue);
@@ -265,7 +255,7 @@
 </div>
 
 <script>
-    // 1. Initialize the Mermaid.js engine
+    // Initialize the Mermaid.js engine
     mermaid.initialize({ 
         startOnLoad: false, 
         theme: 'base',
@@ -279,7 +269,7 @@
         }
     });
 
-    // 2. Simulated AI Intelligence Database
+    // Simulated AI Intelligence Database
     const intelligenceDatabase = {
         "kevin chan": {
             institution: "City of Hope",
@@ -324,18 +314,15 @@
             return;
         }
 
-        // Reset UI state
         document.getElementById('mainDashboard').style.display = 'none';
         document.getElementById('primaryLoader').style.display = 'block';
         
-        // Clear previous visualizations
         const visualContainer = document.getElementById('visualization-container');
         visualContainer.innerHTML = `
             <p class="instruction-text">Select a clinical trial from the list above to command the AI to parse the unstructured eligibility criteria and render a deterministic decision tree.</p>
             <div id="mermaid-render-target" class="mermaid"></div>
         `;
 
-        // 3. Entity Resolution Simulation
         let physicianProfile = intelligenceDatabase["default"];
         for (const key in intelligenceDatabase) {
             if (inputString.includes(key)) {
@@ -344,7 +331,6 @@
             }
         }
 
-        // Update the dashboard with the extracted intelligence
         const profileDisplay = document.getElementById('physicianProfileData');
         profileDisplay.innerHTML = `
             <strong style="color: var(--primary-blue);">Entity Resolved:</strong> ${document.getElementById('queryInput').value}<br>
@@ -352,7 +338,6 @@
             <strong style="color: var(--primary-blue);">Deduced Clinical Focus:</strong> ${physicianProfile.specialty}
         `;
 
-        // 4. Initiate API Data Fetch
         await queryClinicalTrialsAPI(physicianProfile.searchParameters, physicianProfile.locationRadius);
     }
 
@@ -360,36 +345,36 @@
      * Interfaces with the ClinicalTrials.gov API v2.
      */
     async function queryClinicalTrialsAPI(conditionParameters, locationParameters) {
+        // Safe encoding: Removes complex boolean logic from location to prevent API crash
+        const safeLocation = locationParameters.split(' OR ')[0]; 
         const encodedCondition = encodeURIComponent(conditionParameters);
-        const encodedLocation = encodeURIComponent(locationParameters);
+        const encodedLocation = encodeURIComponent(safeLocation);
         
-        const endpointUrl = `https://clinicaltrials.gov/api/v2/studies?query.cond=${encodedCondition}&query.locn=${encodedLocation}&filter.overallStatus=RECRUITING&pageSize=5&format=json`;
+        const endpointUrl = `https://clinicaltrials.gov/api/v2/studies?query.cond=${encodedCondition}&query.locn=${encodedLocation}&filter.overallStatus=RECRUITING&pageSize=5`;
 
         try {
             const networkResponse = await fetch(endpointUrl);
             
             if (!networkResponse.ok) {
-                throw new Error(`API returned HTTP Status: ${networkResponse.status}`);
+                const errorText = await networkResponse.text();
+                throw new Error(`HTTP Error ${networkResponse.status}: ${errorText}`);
             }
             
             const payload = await networkResponse.json();
             
-            // Transition UI from loading state to data display
             document.getElementById('primaryLoader').style.display = 'none';
             document.getElementById('mainDashboard').style.display = 'block';
 
             const resultsContainer = document.getElementById('apiResultsContainer');
-            resultsContainer.innerHTML = ""; // Clear previous results
+            resultsContainer.innerHTML = ""; 
 
             if (!payload.studies || payload.studies.length === 0) {
                 resultsContainer.innerHTML = "<p style='color: var(--danger-color); font-weight: bold;'>No active trials found matching the deduced parameters within the localized geographic network.</p>";
                 return;
             }
 
-            // 5. Traverse the nested JSON schema
             payload.studies.forEach((studyData) => {
                 const protocol = studyData.protocolSection;
-                
                 const identification = protocol.identificationModule;
                 const nctIdentifier = identification.nctId || "NCT_UNKNOWN";
                 const studyTitle = identification.briefTitle || "Untitled Clinical Study";
@@ -398,7 +383,6 @@
                 const currentStatus = statusInfo.overallStatus || "UNKNOWN STATUS";
                 
                 const eligibilityData = protocol.eligibilityModule;
-                
                 const rawCriteriaText = eligibilityData && eligibilityData.eligibilityCriteria 
                     ? eligibilityData.eligibilityCriteria.substring(0, 800) + "..." 
                     : "No structured criteria provided in registry.";
@@ -410,7 +394,7 @@
                     <div class="trial-metadata">
                         <span class="metadata-badge">${nctIdentifier}</span>
                         <span class="metadata-badge" style="background-color: #d4edda; color: #155724;">${currentStatus}</span>
-                        <span><strong>Focus:</strong> ${physicianProfile.specialty.split('&')[0]}</span>
+                        <span><strong>Focus:</strong> ${conditionParameters.split(' OR ')[0]}</span>
                     </div>
                 `;
                 
@@ -419,9 +403,11 @@
             });
 
         } catch (systemError) {
-            console.error("Critical Failure in API fetching protocol:", systemError);
+            console.error("Fetch API Failure:", systemError);
             document.getElementById('primaryLoader').style.display = 'none';
-            alert("System Error: Failed to communicate with the ClinicalTrials.gov API. Please verify network connectivity and API operational status.");
+            
+            // This is the brand new error alert! If you don't see this exact message when it fails, your browser is caching the old version.
+            alert(`API Connection Failed!\n\nTechnical Details: ${systemError.message}\n\nWhy did this happen?\n1. If this says "Failed to fetch", your network firewall, VPN, or ad-blocker is blocking background requests to ClinicalTrials.gov.\n2. If it shows an HTTP code, the API rejected our search parameters.`);
         }
     }
 
@@ -443,7 +429,6 @@
             visualContainer.innerHTML = `<div id="active-mermaid-graph" class="mermaid"></div>`;
             const renderingTarget = document.getElementById('active-mermaid-graph');
 
-            // 6. Formulate the Mermaid.js Markdown Syntax
             const generatedMermaidSyntax = `
                 graph TD
                 %% Initial Assessment Node
@@ -483,14 +468,11 @@
             renderingTarget.textContent = generatedMermaidSyntax;
             
             try {
-                // Fixed the template literal bug right here:
                 const uniqueRenderId = `graph-${Date.now()}`;
                 const { svg } = await mermaid.render(uniqueRenderId, generatedMermaidSyntax);
-                
                 renderingTarget.innerHTML = svg;
-                
             } catch (renderingError) {
-                console.error("Fatal Error during Mermaid.js SVG rendering pipeline: ", renderingError);
+                console.error("Fatal Error during Mermaid.js rendering: ", renderingError);
                 visualContainer.innerHTML = `
                     <p style='color: var(--danger-color); font-weight: bold; text-align: center;'>
                         Rendering Failure: The AI generated invalid structural syntax that the Mermaid engine could not parse.
